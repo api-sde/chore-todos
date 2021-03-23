@@ -14,8 +14,15 @@ func main() {
 
 	// - ToDos:
 	//app.Use(cors.New())
-	// database
-	// redis
+
+	//store := redis.New()
+	//redisPing(store)
 
 	log.Fatal(app.Listen(":3000"))
 }
+
+// func redisPing(store *redis.Storage) {
+
+// 	store.Set("pong", []byte("ping"), time.Duration(time.Microsecond.Hours()))
+
+// }
