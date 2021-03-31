@@ -4,10 +4,10 @@ import (
 	"time"
 
 	"github.com/form3tech-oss/jwt-go"
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 )
 
-func Login(c *fiber.Ctx) error {
+func Login(ctx *fiber.Ctx) error {
 
 	token := jwt.New(jwt.SigningMethodHS256)
 
@@ -20,5 +20,5 @@ func Login(c *fiber.Ctx) error {
 		//return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	return c.JSON(fiber.Map{"status": "success", "message": "Success login", "data": t})
+	return ctx.JSON(fiber.Map{"status": "success", "message": "Success login", "data": t})
 }
