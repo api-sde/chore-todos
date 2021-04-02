@@ -13,6 +13,9 @@ func SetupRoutes(app *fiber.App) {
 	app.Get("/hello", handlers.GetHello)
 	app.Get("/hello-protected", middleware.Protected(), handlers.GetHello)
 
+	app.Get("/redis-set", handlers.SetHelloRedis)
+	app.Get("/redis-get", handlers.GetHelloRedis)
+
 	// Auth
 	auth := app.Group("/auth")
 	auth.Get("/login", handlers.Login)

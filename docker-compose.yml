@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  redis:
+    image: redis:latest
+    container_name: redis.redischore.docker
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:55000:6379
+    networks:
+      - global
+networks:
+  global:
+    external: true
