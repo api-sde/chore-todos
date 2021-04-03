@@ -33,7 +33,7 @@ func GetUser(ctx *fiber.Ctx) error {
 
 	// to do try interface with switch into models package
 	userResult := new(models.User)
-	persistence.ToModel(userResult, userJson)
+	models.ToModel(userResult, userJson)
 
 	return ctx.JSON(userResult)
 }
@@ -45,7 +45,7 @@ func GetUsers(ctx *fiber.Ctx) error {
 	return ctx.JSON(fiber.Map{
 		"count": len(allUsers) / 2,
 		"error": err,
-		"data":  allUsers,
+		"data":  models.ToCollectionModel(new(models.User), allUsers),
 	})
 }
 
