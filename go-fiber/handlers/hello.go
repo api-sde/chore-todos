@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/adrienBdx/chore-todos/gofiber/models"
@@ -18,6 +19,8 @@ func GetHello(ctx *fiber.Ctx) error {
 	return ctx.JSON(helloUser)
 }
 
+var ctback = context.Background()
+
 func SetHelloRedis(ctx *fiber.Ctx) error {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
@@ -25,7 +28,7 @@ func SetHelloRedis(ctx *fiber.Ctx) error {
 		DB:       0,  // use default DB
 	})
 
-	err := rdb.Set(ctx.Context(), "hello", "hello from redis container", 0).Err()
+	err := rdb.Set(ctback, "hello", "hello from redis container", 0).Err()
 	if err != nil {
 		panic(err)
 	}
@@ -40,11 +43,24 @@ func GetHelloRedis(ctx *fiber.Ctx) error {
 		DB:       0,  // use default DB
 	})
 
-	val, err := rdb.Get(ctx.Context(), "hello").Result()
+	val, err := rdb.Get(ctback, "hello").Result()
 	if err != nil {
 		panic(err)
 	}
+
 	fmt.Println("key", val)
 
 	return ctx.JSON(val)
+	//return ctx.JSON("connected" + rdb.String() + " ")
+}
+
+func ClearRedis(ctx *fiber.Ctx) error {
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+	rdb.FlushDB(ctback)
+
+	return ctx.SendStatus(200)
 }
