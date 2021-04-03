@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
 	"github.com/adrienBdx/chore-todos/gofiber/models"
 	"github.com/adrienBdx/chore-todos/gofiber/persistence"
+	"github.com/adrienBdx/chore-todos/gofiber/store"
 )
 
 /*
@@ -23,16 +23,17 @@ func GetUser(ctx *fiber.Ctx) error {
 
 	email := ctx.Params("email")
 
-	userId, err := persistence.Redis.HGet(context.Background(), "Users", email).Result()
+	userId, err := persistence.GetHashValue(store.Users, email)
 
-	if err == redis.Nil || userId == "" {
-		return ctx.Status(404).JSON(fiber.Map{"message": "User not found for " + email})
+	if err != nil {
+		return ctx.Status(404).JSON(err)
 	}
 
-	userData, err := persistence.Redis.HGet(context.Background(), "Users", userId).Result()
+	userJson, err := persistence.GetHashValue(store.Users, userId)
 
+	// to do try interface with switch into models package
 	userResult := new(models.User)
-	json.Unmarshal([]byte(userData), userResult)
+	persistence.ToModel(userResult, userJson)
 
 	return ctx.JSON(userResult)
 }
