@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/gofiber/fiber/v2"
@@ -11,12 +10,6 @@ import (
 	"github.com/adrienBdx/chore-todos/gofiber/persistence"
 	"github.com/adrienBdx/chore-todos/gofiber/store"
 )
-
-/*
-TODOs:
-- Verify is user exist before creation
-- Generic Redis operation interfac
-*/
 
 // user/:email
 func GetUser(ctx *fiber.Ctx) error {
@@ -30,22 +23,25 @@ func GetUser(ctx *fiber.Ctx) error {
 	}
 
 	userJson, err := persistence.GetHashValue(store.Users, userId)
-
-	// to do try interface with switch into models package
-	userResult := new(models.User)
-	models.ToModel(userResult, userJson)
+	userResult := models.ToModel(new(models.User), userJson)
 
 	return ctx.JSON(userResult)
 }
 
 func GetUsers(ctx *fiber.Ctx) error {
 
-	allUsers, err := persistence.Redis.HGetAll(context.Background(), "Users").Result()
+	usersMap, err := persistence.GetAllHash(store.Users)
+
+	if err != nil {
+		return ctx.Status(404).JSON(err)
+	}
+
+	modelList := models.ToCollectionModel(models.User{}, usersMap)
 
 	return ctx.JSON(fiber.Map{
-		"count": len(allUsers) / 2,
+		"count": len(usersMap) / 2,
 		"error": err,
-		"data":  models.ToCollectionModel(new(models.User), allUsers),
+		"data":  modelList,
 	})
 }
 
@@ -54,7 +50,11 @@ func CreateUser(ctx *fiber.Ctx) error {
 	newUser := new(models.User)
 
 	if err := ctx.BodyParser(newUser); err != nil {
-		return ctx.Status(500).JSON(fiber.Map{"message": "Couldn't create user", "data": err})
+		return ctx.Status(400).JSON(fiber.Map{"message": "Couldn't parse user", "error": err})
+	}
+
+	if persistence.ExistInHash(store.Users, newUser.Email) {
+		return ctx.Status(400).JSON(fiber.Map{"message": "A user already exist with this email."})
 	}
 
 	newUser.UserId = uuid.New().String()
@@ -65,7 +65,8 @@ func CreateUser(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(500)
 	}
 
-	persistence.Redis.HSet(context.Background(), "Users",
+	// Insert 2 pairs: email | userId & userId | user(json)
+	persistence.InsertInHash(store.Users,
 		newUser.Email, newUser.UserId,
 		newUser.UserId, newUserJson,
 	)

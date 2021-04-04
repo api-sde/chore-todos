@@ -3,13 +3,20 @@ package models
 import (
 	"encoding/json"
 	"github.com/google/uuid"
+	"reflect"
 )
 
-func ToModel(model interface{}, jsonValue string) {
-	json.Unmarshal([]byte(jsonValue), model)
+func TypeName(model interface{}) string {
+	return reflect.TypeOf(model).Name()
 }
 
-func ToCollectionModel(model interface{}, jsonByUUID map[string]string) interface{} {
+func ToModel(model interface{}, jsonValue string) interface{} {
+	json.Unmarshal([]byte(jsonValue), model)
+
+	return model
+}
+
+func ToCollectionModel(modelTarget interface{}, jsonByUUID map[string]string) interface{} {
 	var collectionResult []interface{}
 	
 	for key, json := range jsonByUUID {
@@ -20,7 +27,7 @@ func ToCollectionModel(model interface{}, jsonByUUID map[string]string) interfac
 			continue
 		}
 
-		var modelType = GetModelType(model)
+		var modelType = GetNewModelType(modelTarget)
 		ToModel(modelType, json)
 		collectionResult = append(collectionResult, modelType)
 	}
@@ -28,19 +35,21 @@ func ToCollectionModel(model interface{}, jsonByUUID map[string]string) interfac
 	return collectionResult
 }
 
-func GetModelType(model interface{}) interface{} {
+func GetNewModelType(modelType interface{}) interface{} {
 
-	var modelType interface{}
+	var newInstance interface{}
 
-	switch model.(type) {
-	case User:
-		modelType = new(User)
-	case ToDoItem:
-		modelType = new(ToDoItem)
+	switch TypeName(modelType) {
+
+	case TypeName(User{}):
+		newInstance = new(User)
+
+	case TypeName(ToDoItem{}):
+		newInstance = new(ToDoItem)
+
 	default:
-		modelType = nil
+		newInstance = nil
 	}
 
-	return modelType
-
+	return newInstance
 }
