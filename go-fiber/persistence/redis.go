@@ -56,4 +56,26 @@ func InsertInHash(hashKey string, values ...interface{}) bool {
 	return true
 }
 
-/// ToDos: HMGET / HSET / HGET / SADD
+func InsertInSet(setKey string, setValues ...interface{}) bool {
+
+	_, err := Redis.SAdd(context.Background(), setKey, setValues).Result()
+
+	if err != nil {
+		//log
+		return false
+	}
+
+	return true
+}
+
+func GetAllSet(setKey string) ([]string, error) {
+
+	setValues, err := Redis.SMembers(context.Background(), setKey).Result()
+
+	if err != nil {
+		return nil, errors.New("No value found for the key")
+	}
+
+	return setValues, nil
+}
+/// ToDos: HMGET / HSET / HGET / SADD / SMEMBERS

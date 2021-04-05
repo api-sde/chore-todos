@@ -24,7 +24,7 @@ func ConnectRedis() {
 	pong, err := Redis.Ping(context.Background()).Result()
 	fmt.Println("Ping? " + pong)
 
-	if !(err == nil || pong == "PONG") {
+	if (err != nil || pong != "PONG") {
 		log.Fatal("Cannot connect to Redis.")
 		panic(err)
 	}
