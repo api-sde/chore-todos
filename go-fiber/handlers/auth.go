@@ -5,6 +5,7 @@ import (
 	"github.com/adrienBdx/chore-todos/gofiber/persistence"
 	"github.com/adrienBdx/chore-todos/gofiber/store"
 	"github.com/google/uuid"
+	"strings"
 	"time"
 
 	"github.com/form3tech-oss/jwt-go"
@@ -43,4 +44,23 @@ func Login(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(200).JSON(fiber.Map{"message": "Success login", "data": newToken})
+}
+
+func Authorize(ctx *fiber.Ctx) error {
+
+	/* Move this to auth handler, pass data to ctx.Locals(...) ? */
+	authBearer := ctx.Get(fiber.HeaderAuthorization)
+	jwtToken := strings.Fields(authBearer)[1]
+	token, _ := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
+		return nil, nil
+	})
+
+	claims := token.Claims.(jwt.MapClaims)
+	userId := claims["userid"].(string)
+	// --
+
+	newToDo := new(models.ToDoItem)
+	if err := ctx.BodyParser(newToDo); err != nil {
+		return ctx.Status(400).JSON(fiber.Map{"message": "Couldn't parse to do", "error": err})
+	}
 }

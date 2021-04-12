@@ -44,21 +44,6 @@ func GetToDos(ctx *fiber.Ctx) error {
 
 func CreateToDo(ctx *fiber.Ctx) error {
 
-	/* Move this to auth handler, pass data to ctx.Locals(...) ? */
-	authBearer := ctx.Get(fiber.HeaderAuthorization)
-	jwtToken := strings.Fields(authBearer)[1]
-	token, _ := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
-		return nil, nil
-	})
-
-	claims := token.Claims.(jwt.MapClaims)
-	userId := claims["userid"].(string)
-	// --
-
-	newToDo := new(models.ToDoItem)
-	if err := ctx.BodyParser(newToDo); err != nil {
-		return ctx.Status(400).JSON(fiber.Map{"message": "Couldn't parse to do", "error": err})
-	}
 
 	newToDo.ItemId = uuid.New().String()
 	newToDo.CreatedBy = userId
