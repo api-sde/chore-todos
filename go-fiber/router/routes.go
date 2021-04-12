@@ -29,7 +29,22 @@ func SetupRoutes(app *fiber.App) {
 
 	// ToDo
 	todo := app.Group("/todo")
-	todo.Post("/", middleware.Protected(), handlers.CreateToDo)
-	todo.Get("/", handlers.GetToDos)
+
+	todo.Get("/all", handlers.GetAllToDos)
+	todo.Get("/user", func(ctx *fiber.Ctx) error {
+		middleware.Protected()
+		middleware.GetUserClaims(ctx)
+		ctx.Next()
+		return nil
+	}, handlers.GetToDoByUser)
+
+	todo.Get("/:todoId", handlers.GetToDoById)
+
+	todo.Post("/", func(ctx *fiber.Ctx) error {
+		middleware.Protected()
+		middleware.GetUserClaims(ctx)
+		ctx.Next()
+		return nil
+	}, handlers.CreateToDo)
 
 }

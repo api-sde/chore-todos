@@ -48,7 +48,6 @@ func Login(ctx *fiber.Ctx) error {
 
 func Authorize(ctx *fiber.Ctx) error {
 
-	/* Move this to auth handler, pass data to ctx.Locals(...) ? */
 	authBearer := ctx.Get(fiber.HeaderAuthorization)
 	jwtToken := strings.Fields(authBearer)[1]
 	token, _ := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
@@ -58,9 +57,7 @@ func Authorize(ctx *fiber.Ctx) error {
 	claims := token.Claims.(jwt.MapClaims)
 	userId := claims["userid"].(string)
 	// --
+	ctx.Locals("LoggedUserId", userId)
 
-	newToDo := new(models.ToDoItem)
-	if err := ctx.BodyParser(newToDo); err != nil {
-		return ctx.Status(400).JSON(fiber.Map{"message": "Couldn't parse to do", "error": err})
-	}
+	return nil // To do, better way to do this?
 }

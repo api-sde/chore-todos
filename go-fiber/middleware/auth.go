@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"github.com/adrienBdx/chore-todos/gofiber/handlers"
 	"github.com/gofiber/fiber/v2"
 	jwtware "github.com/gofiber/jwt/v2"
 )
@@ -20,4 +21,14 @@ func jwtError(c *fiber.Ctx, err error) error {
 	}
 	return c.Status(fiber.StatusUnauthorized).
 		JSON(fiber.Map{"message": "Invalid or expired JWT", "data": nil})
+}
+
+func GetUserClaims(ctx *fiber.Ctx) (fiber.Handler, error) {
+	err := handlers.Authorize(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, err
 }
