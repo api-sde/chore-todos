@@ -20,7 +20,7 @@ func GetUser(ctx *fiber.Ctx) error {
 		return ctx.Status(400).JSON(fiber.Map{"message": "Parameter error, invalid email."})
 	}
 
-	if services.IsUserExisting(email) {
+	if !services.IsUserExisting(email) {
 		return ctx.Status(404).JSON(fiber.Map{"message": "User not found."})
 	}
 

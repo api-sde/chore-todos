@@ -39,7 +39,7 @@ func Login(ctx *fiber.Ctx) error {
 	claims["email"] = userToLogin.Email
 	claims["userid"] = userModel.UserId
 	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
-	claims["validation_trace"] = uuid.New() // For logout, to implement
+	claims["validation_trace"] = uuid.New() // For logout
 
 	newToken, err := token.SignedString([]byte("SECRET")) //config.Config("SECRET")))
 	if err != nil {
@@ -50,16 +50,25 @@ func Login(ctx *fiber.Ctx) error {
 }
 
 func Logout(ctx *fiber.Ctx) error {
-	return nil
+
+	token, _ := GetJWT(ctx)
+	var validationTrace string
+	validationTrace = token.Claims.(jwt.MapClaims)["validation_trace"].(string)
+
+	if !services.InvalidateToken(validationTrace) {
+		return ctx.Status(500).JSON(fiber.Map{"message": "Error while trying to log out."})
+	}
+
+	return ctx.Status(200).JSON(fiber.Map{"message": "Successfully logged out."})
 }
 
 func Authorize(ctx *fiber.Ctx) error {
 
-	authBearer := ctx.Get(fiber.HeaderAuthorization)
-	jwtToken := strings.Fields(authBearer)[1]
-	token, _ := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
-		return nil, nil
-	})
+	token, err := GetJWT(ctx)
+
+	if err != nil {
+		return err
+	}
 
 	claims := token.Claims.(jwt.MapClaims)
 	userId := claims["userid"].(string)
@@ -67,10 +76,31 @@ func Authorize(ctx *fiber.Ctx) error {
 	username := claims["username"].(string)
 	validation_trace := claims["validation_trace"].(string)
 
+	if !services.VerifyTokenValidity(validation_trace) {
+		err := fiber.NewError(401)
+		err.Message = "Invalidated JWT, please try to login again. IP: " + ctx.IP()
+		return err
+	}
+
 	ctx.Locals("CurrentUserId", userId)
 	ctx.Locals("CurrentUserEmail", email)
 	ctx.Locals("CurrentUserName", username)
 	ctx.Locals("ValidationTrace", validation_trace)
 
 	return nil
+}
+
+func GetJWT(ctx *fiber.Ctx) (*jwt.Token, error) {
+	authBearer := ctx.Get(fiber.HeaderAuthorization)
+	jwtToken := strings.Fields(authBearer)
+
+	if len(jwtToken) < 1 {
+		return nil, fiber.NewError(401)
+	}
+
+	token, _ := jwt.Parse(jwtToken[1], func(token *jwt.Token) (interface{}, error) {
+		return nil, nil
+	})
+
+	return token, nil
 }

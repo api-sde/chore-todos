@@ -10,6 +10,7 @@ import (
 func SetupRoutes(app *fiber.App) {
 	// Middleware
 	app.Group("*", logger.New())
+
 	app.Get("/hello", handlers.GetHello)
 	app.Get("/hello-protected", middleware.Protected(), handlers.GetHello)
 
@@ -20,31 +21,36 @@ func SetupRoutes(app *fiber.App) {
 	// Auth
 	auth := app.Group("/auth")
 	auth.Post("/login", handlers.Login)
+	auth.Post("/logout", handlers.Logout)
+
+	/// All API endpoints ///
+	// For unprotected endpoints: api := app.Group("/api")
+	api := app.Group("/api",
+
+		func(ctx *fiber.Ctx) error {
+			middleware.Protected()
+
+			// will throw if invalid token
+			_, err := middleware.GetUserClaims(ctx)
+			if err != nil {
+				return err
+			}
+
+			ctx.Next()
+			return nil
+	})
 
 	// User
-	user := app.Group("/user")
+	user := api.Group("/user")
 	user.Get("/:email", handlers.GetUser)
 	user.Get("/", handlers.GetUsers)
 	user.Post("/", handlers.CreateUser)
 
-	// ToDo
-	todo := app.Group("/todo")
-
+	// To Dos
+	todo := api.Group("/todo")
 	todo.Get("/all", handlers.GetAllToDos)
-	todo.Get("/user", func(ctx *fiber.Ctx) error {
-		middleware.Protected()
-		middleware.GetUserClaims(ctx)
-		ctx.Next()
-		return nil
-	}, handlers.GetToDoByUser)
-
+	todo.Get("/user", handlers.GetToDoByUser)
 	todo.Get("/:todoId", handlers.GetToDoById)
-
-	todo.Post("/", func(ctx *fiber.Ctx) error {
-		middleware.Protected()
-		middleware.GetUserClaims(ctx)
-		ctx.Next()
-		return nil
-	}, handlers.CreateToDo)
+	todo.Post("/", handlers.CreateToDo)
 
 }

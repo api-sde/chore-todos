@@ -1,6 +1,8 @@
 package store
 
-const (
+const
+(
+	InvalidatedTokens = "InvalidatedTokens"
 	Users = "Users"
 	ToDos = "ToDos"
 	ToDosByUserId = "ToDosByUser"
