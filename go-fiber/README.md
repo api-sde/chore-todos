@@ -8,8 +8,13 @@ go run main.go
     * Simple REST API CRUD logic and validation
     * Interaction with Redis via repository
     * Model dynamic
-    * Get all users: /api/user
-    * Get user by email
+    * Authentication logic via JWT with email, secure hashed password
+    * Endpoint completed:
+      - Get all users: /api/user
+      - Get user by email: /api/user/{email}
+      - Post new user: /api/user
+      - Login existing user: /auth/login
+  
   <table>
     <thead>
       <tr>
@@ -40,12 +45,11 @@ go run main.go
     * Move core logic into services
     * Testing / Performance
     * 3rd party integration
-
-
+  
 - Features:
-    * As a user, I can create a unique account with an email
+    * As a user, I can create a unique account with an email - OK
     * As a user, I can see my profile
-    * As a user, I can reate a note/todo
+    * As a user, I can create a note/todo
     * As a user, I can create, edit, delete a note/todo
     * As a user, I can see all my notes/todos (personal), and group notes
     * As a user, I can create a group of user to share
