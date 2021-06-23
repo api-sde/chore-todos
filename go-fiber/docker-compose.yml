@@ -1,0 +1,10 @@
+version: "2"
+services:
+  app:
+    image: golang:latest
+    volumes:
+      - .:/go-fiber
+    working_dir: /go-fiber
+    command: go run main.go
+
+    
