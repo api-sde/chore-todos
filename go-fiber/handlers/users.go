@@ -1,14 +1,11 @@
 package handlers
 
 import (
-	"crypto/rand"
 	"encoding/json"
-	"math"
-	"strconv"
-	"strings"
-
+	"github.com/adrienBdx/chore-todos/gofiber/services"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/adrienBdx/chore-todos/gofiber/models"
 	"github.com/adrienBdx/chore-todos/gofiber/persistence"
@@ -26,8 +23,7 @@ func GetUser(ctx *fiber.Ctx) error {
 		return ctx.Status(404).JSON(err)
 	}
 
-	userJson, err := persistence.GetHashValue(store.Users, userId)
-	userResult := models.ToModel(new(models.User), userJson)
+	userResult := services.GetUserById(userId)
 
 	return ctx.JSON(userResult)
 }
@@ -62,80 +58,42 @@ func CreateUser(ctx *fiber.Ctx) error {
 	}
 
 	newUser.UserId = uuid.New().String()
-	newUser.Password, newUser.UserKey, _ = BlurPassword(newUser.Email, newUser.Password)
-
+	hashedPassword, errEncrypt := EncryptPassword(newUser.Password)
+	newUser.Password = hashedPassword
 	newUserJson, err := json.Marshal(newUser)
 
-	if err != nil {
+	if err != nil || errEncrypt != nil {
 		return ctx.SendStatus(500)
 	}
 
-	// Insert 2 pairs: email | userId & userId | user(json)
+	// Insert 2 pairs:
+	// - email | userId
+	// - userId | user(json)
 	persistence.InsertInHash(store.Users,
 		newUser.Email, newUser.UserId,
 		newUser.UserId, newUserJson,
 	)
 
 	// Clean up secrets before returning the response
-	newUser.Password = ""
-	newUser.UserKey = ""
+	//newUser.Password = ""
 
 	return ctx.JSON(newUser)
 }
 
-/// Heuristic unsecure blur
-func BlurPassword(email string, password string) (blurred string, key string, err error) {
-
-	// User specific value, can be common
-	size := len(email) + len(password)
-
-	// Unique user key
-	userRandomKey, err := rand.Prime(rand.Reader, size)
+func EncryptPassword(password string) (string, error) {
+	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
-	seed := ((float64(size) / math.Pi) * float64(userRandomKey.Int64()))
-	seedString := strconv.FormatFloat(seed, 'G', 128, 64)
-
-	var blurredPassword strings.Builder
-	var switchToAscii bool = false
-	var switchRune bool = false
-
-	for position, char := range password {
-
-		var result rune
-
-		charInt := int(char)
-
-		var index int
-		if switchRune {
-			index = charInt + position
-			switchRune = !switchRune
-		} else {
-			index = charInt - position
-		}
-
-		for len(seedString) <= index {
-			index = index / 2
-		}
-
-		result = rune(seedString[index])
-
-		if switchToAscii {
-			blurredPassword.WriteString(string(result))
-		} else {
-			blurredPassword.WriteRune(result)
-		}
-
-		switchToAscii = !switchToAscii
-	}
-
-	return blurredPassword.String(), string(userRandomKey.Int64()), nil
+	return string(hashed), nil
 }
 
-/* To Do: bcrypt:
-https://hackernoon.com/how-to-store-passwords-example-in-go-62712b1d2212
-https://gowebexamples.com/password-hashing/
-*/
+func ValidatePassword(password string, currentHash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(currentHash), []byte(password))
+	if err != nil {
+		return false
+	}
+	return true
+}

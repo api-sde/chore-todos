@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/adrienBdx/chore-todos/gofiber/models"
 	"github.com/adrienBdx/chore-todos/gofiber/persistence"
+	"github.com/adrienBdx/chore-todos/gofiber/services"
 	"github.com/adrienBdx/chore-todos/gofiber/store"
 	"github.com/google/uuid"
 	"strings"
@@ -20,14 +21,19 @@ func Login(ctx *fiber.Ctx) error {
 		return ctx.Status(400).JSON(fiber.Map{"message": "Couldn't parse user", "error": err})
 	}
 
-	if  !(len(userToLogin.Email) > 0) ||
+	if !(len(userToLogin.Email) > 0) ||
 		!(len(userToLogin.Name) > 0) ||
 		!(persistence.ExistInHash(store.Users, userToLogin.Email)) {
 
-		return ctx.Status(400).JSON(fiber.Map{"message": "Invalid credentials"})
+		return ctx.Status(401).JSON(fiber.Map{"message": "Invalid credentials"})
 	}
 
 	userId, err := persistence.GetHashValue(store.Users, userToLogin.Email)
+	userModel := services.GetUserById(userId)
+
+	if !ValidatePassword(userToLogin.Password, userModel.Password) {
+		return ctx.Status(401).JSON(fiber.Map{"message": "Invalid credentials"})
+	}
 
 	token := jwt.New(jwt.SigningMethodHS256)
 

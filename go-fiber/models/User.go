@@ -5,6 +5,5 @@ type User struct {
 	Ip       string
 	Name     string
 	Email    string
-	Password string `json:"-"`
-	UserKey  string `json:"-"`
+	Password string //`json:"-"`
 }
