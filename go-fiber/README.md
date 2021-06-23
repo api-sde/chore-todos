@@ -8,9 +8,34 @@ go run main.go
     * Simple REST API CRUD logic and validation
     * Interaction with Redis via repository
     * Model dynamic
-    * Get all users: /api/user: ~300 ms with 30000
-    * Get user by email: /api/user/email <10ms with 30000
-
+    * Get all users: /api/user
+    * Get user by email
+  <table>
+    <thead>
+      <tr>
+        <th>Average Response time (ms)</th>
+        <th>User count</th>
+        <th>Get all users: /api/user </th>
+        <th>Get user by email: /api/user/email</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td></td>
+            <td>30 000</td>
+            <td>~300 ms</td>
+            <td><10 ms</td>
+        </tr>
+        <tr>
+            <td></td>
+            <td>60 000</td>
+            <td>~500 ms</td>
+            <td>5-10 ms</td>
+        </tr>
+    </tbody>
+  </table>
+  
+  
 - To Implement:
     * Move core logic into services
     * Testing / Performance

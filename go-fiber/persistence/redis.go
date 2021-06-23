@@ -38,7 +38,6 @@ func ExistInHash(hashKey string, fieldKey string) bool {
 	}
 
 	return exist
-
 }
 
 func InsertInHash(hashKey string, values ...interface{}) bool {

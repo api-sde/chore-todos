@@ -1,7 +1,11 @@
 package handlers
 
 import (
+	"crypto/rand"
 	"encoding/json"
+	"math"
+	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -58,6 +62,7 @@ func CreateUser(ctx *fiber.Ctx) error {
 	}
 
 	newUser.UserId = uuid.New().String()
+	newUser.Password, newUser.UserKey, _ = BlurPassword(newUser.Email, newUser.Password)
 
 	newUserJson, err := json.Marshal(newUser)
 
@@ -71,5 +76,66 @@ func CreateUser(ctx *fiber.Ctx) error {
 		newUser.UserId, newUserJson,
 	)
 
+	// Clean up secrets before returning the response
+	newUser.Password = ""
+	newUser.UserKey = ""
+
 	return ctx.JSON(newUser)
 }
+
+/// Heuristic unsecure blur
+func BlurPassword(email string, password string) (blurred string, key string, err error) {
+
+	// User specific value, can be common
+	size := len(email) + len(password)
+
+	// Unique user key
+	userRandomKey, err := rand.Prime(rand.Reader, size)
+
+	if err != nil {
+		return "", "", err
+	}
+
+	seed := ((float64(size) / math.Pi) * float64(userRandomKey.Int64()))
+	seedString := strconv.FormatFloat(seed, 'G', 128, 64)
+
+	var blurredPassword strings.Builder
+	var switchToAscii bool = false
+	var switchRune bool = false
+
+	for position, char := range password {
+
+		var result rune
+
+		charInt := int(char)
+
+		var index int
+		if switchRune {
+			index = charInt + position
+			switchRune = !switchRune
+		} else {
+			index = charInt - position
+		}
+
+		for len(seedString) <= index {
+			index = index / 2
+		}
+
+		result = rune(seedString[index])
+
+		if switchToAscii {
+			blurredPassword.WriteString(string(result))
+		} else {
+			blurredPassword.WriteRune(result)
+		}
+
+		switchToAscii = !switchToAscii
+	}
+
+	return blurredPassword.String(), string(userRandomKey.Int64()), nil
+}
+
+/* To Do: bcrypt:
+https://hackernoon.com/how-to-store-passwords-example-in-go-62712b1d2212
+https://gowebexamples.com/password-hashing/
+*/
