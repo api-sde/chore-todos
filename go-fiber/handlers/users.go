@@ -2,14 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/adrienBdx/chore-todos/gofiber/services"
-	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/adrienBdx/chore-todos/gofiber/models"
 	"github.com/adrienBdx/chore-todos/gofiber/persistence"
+	"github.com/adrienBdx/chore-todos/gofiber/services"
 	"github.com/adrienBdx/chore-todos/gofiber/store"
+	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 // user/:email
@@ -17,13 +16,19 @@ func GetUser(ctx *fiber.Ctx) error {
 
 	email := ctx.Params("email")
 
-	userId, err := persistence.GetHashValue(store.Users, email)
-
-	if err != nil {
-		return ctx.Status(404).JSON(err)
+	if len(email) == 0 {
+		return ctx.Status(400).JSON(fiber.Map{"message": "Parameter error, invalid email."})
 	}
 
-	userResult := services.GetUserById(userId)
+	if services.IsUserExisting(email) {
+		return ctx.Status(404).JSON(fiber.Map{"message": "User not found."})
+	}
+
+	userResult, err := services.GetUserByEmail(email)
+
+	if err != nil {
+		return ctx.Status(500).JSON(err)
+	}
 
 	return ctx.JSON(userResult)
 }
@@ -53,13 +58,15 @@ func CreateUser(ctx *fiber.Ctx) error {
 		return ctx.Status(400).JSON(fiber.Map{"message": "Couldn't parse user", "error": err})
 	}
 
-	if persistence.ExistInHash(store.Users, newUser.Email) {
+	if services.IsUserExisting(newUser.Email) {
 		return ctx.Status(400).JSON(fiber.Map{"message": "A user already exist with this email."})
 	}
 
 	newUser.UserId = uuid.New().String()
-	hashedPassword, errEncrypt := EncryptPassword(newUser.Password)
+	newUser.Ip = ctx.IP()
+	hashedPassword, errEncrypt := services.EncryptPassword(newUser.Password)
 	newUser.Password = hashedPassword
+
 	newUserJson, err := json.Marshal(newUser)
 
 	if err != nil || errEncrypt != nil {
@@ -75,25 +82,7 @@ func CreateUser(ctx *fiber.Ctx) error {
 	)
 
 	// Clean up secrets before returning the response
-	//newUser.Password = ""
+	newUser.Password = ""
 
 	return ctx.JSON(newUser)
-}
-
-func EncryptPassword(password string) (string, error) {
-	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-
-	if err != nil {
-		return "", err
-	}
-
-	return string(hashed), nil
-}
-
-func ValidatePassword(password string, currentHash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(currentHash), []byte(password))
-	if err != nil {
-		return false
-	}
-	return true
 }

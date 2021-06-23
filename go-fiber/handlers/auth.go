@@ -2,9 +2,7 @@ package handlers
 
 import (
 	"github.com/adrienBdx/chore-todos/gofiber/models"
-	"github.com/adrienBdx/chore-todos/gofiber/persistence"
 	"github.com/adrienBdx/chore-todos/gofiber/services"
-	"github.com/adrienBdx/chore-todos/gofiber/store"
 	"github.com/google/uuid"
 	"strings"
 	"time"
@@ -23,15 +21,14 @@ func Login(ctx *fiber.Ctx) error {
 
 	if !(len(userToLogin.Email) > 0) ||
 		!(len(userToLogin.Name) > 0) ||
-		!(persistence.ExistInHash(store.Users, userToLogin.Email)) {
+		!(services.IsUserExisting(userToLogin.Email)) {
 
 		return ctx.Status(401).JSON(fiber.Map{"message": "Invalid credentials"})
 	}
 
-	userId, err := persistence.GetHashValue(store.Users, userToLogin.Email)
-	userModel := services.GetUserById(userId)
+	userModel, err := services.GetUserByEmail(userToLogin.Email)
 
-	if !ValidatePassword(userToLogin.Password, userModel.Password) {
+	if err != nil || !services.ValidatePassword(userToLogin.Password, userModel.Password) {
 		return ctx.Status(401).JSON(fiber.Map{"message": "Invalid credentials"})
 	}
 
@@ -40,7 +37,7 @@ func Login(ctx *fiber.Ctx) error {
 	claims := token.Claims.(jwt.MapClaims)
 	claims["username"] = userToLogin.Name
 	claims["email"] = userToLogin.Email
-	claims["userid"] = userId
+	claims["userid"] = userModel.UserId
 	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 	claims["validation_trace"] = uuid.New() // For logout, to implement
 
@@ -50,6 +47,10 @@ func Login(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(200).JSON(fiber.Map{"message": "Success login", "data": newToken})
+}
+
+func Logout(ctx *fiber.Ctx) error {
+	return nil
 }
 
 func Authorize(ctx *fiber.Ctx) error {
@@ -62,8 +63,14 @@ func Authorize(ctx *fiber.Ctx) error {
 
 	claims := token.Claims.(jwt.MapClaims)
 	userId := claims["userid"].(string)
-	// --
-	ctx.Locals("LoggedUserId", userId)
+	email := claims["email"].(string)
+	username := claims["username"].(string)
+	validation_trace := claims["validation_trace"].(string)
 
-	return nil // To do, better way to do this?
+	ctx.Locals("CurrentUserId", userId)
+	ctx.Locals("CurrentUserEmail", email)
+	ctx.Locals("CurrentUserName", username)
+	ctx.Locals("ValidationTrace", validation_trace)
+
+	return nil
 }
