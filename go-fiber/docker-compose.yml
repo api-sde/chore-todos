@@ -7,4 +7,9 @@ services:
     working_dir: /go-fiber
     command: go run main.go
 
-    
+    links:
+      - redis
+  redis:
+    image: redis:alpine
+    ports:
+      - 127:0:0:1:6379:6379

@@ -16,7 +16,7 @@ var Redis *redis.Client
 func ConnectRedis() {
 
 	Redis = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     "redis:6379",
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
@@ -24,7 +24,7 @@ func ConnectRedis() {
 	pong, err := Redis.Ping(context.Background()).Result()
 	fmt.Println("Ping? " + pong)
 
-	if (err != nil || pong != "PONG") {
+	if err != nil || pong != "PONG" {
 		log.Fatal("Cannot connect to Redis.")
 		panic(err)
 	}
