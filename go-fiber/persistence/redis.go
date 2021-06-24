@@ -3,6 +3,7 @@ package persistence
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 )
@@ -38,7 +39,6 @@ func ExistInHash(hashKey string, fieldKey string) bool {
 	}
 
 	return exist
-
 }
 
 func InsertInHash(hashKey string, values ...interface{}) bool {
@@ -66,6 +66,14 @@ func InsertInSet(setKey string, setValues ...interface{}) bool {
 	}
 
 	return true
+}
+
+func SetExpiration(setKey string, expiration time.Duration) {
+	_, err := Redis.Expire(context.Background(), setKey, expiration).Result()
+
+	if err != nil {
+		return
+	}
 }
 
 func GetAllSet(setKey string) ([]string, error) {

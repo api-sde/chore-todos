@@ -20,11 +20,11 @@ func GetHello(ctx *fiber.Ctx) error {
 	return ctx.JSON(helloUser)
 }
 
-var ctback = context.Background()
+var ctxback = context.Background()
 
 func SetHelloRedis(ctx *fiber.Ctx) error {
 
-	err := persistence.Redis.Set(ctback, "Hello", "Hello from redis container", 0).Err()
+	err := persistence.Redis.Set(ctxback, "Hello", "Hello from redis container", 0).Err()
 	if err != nil {
 		panic(err)
 	}
@@ -34,7 +34,7 @@ func SetHelloRedis(ctx *fiber.Ctx) error {
 
 func GetHelloRedis(ctx *fiber.Ctx) error {
 
-	val, err := persistence.Redis.Get(ctback, "Hello").Result()
+	val, err := persistence.Redis.Get(ctxback, "Hello").Result()
 	if err != nil {
 		panic(err)
 	}
@@ -47,7 +47,7 @@ func GetHelloRedis(ctx *fiber.Ctx) error {
 func ClearRedis(ctx *fiber.Ctx) error {
 
 	if strings.HasPrefix(ctx.Hostname(), "localhost") {
-		persistence.Redis.FlushDB(ctback)
+		persistence.Redis.FlushDB(ctxback)
 
 		return ctx.JSON("Redis successfully flushed")
 	}

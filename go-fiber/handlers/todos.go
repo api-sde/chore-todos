@@ -40,12 +40,11 @@ func GetToDoById(ctx *fiber.Ctx) error {
 	return ctx.JSON(model)
 }
 
-
 func GetToDoByUser(ctx *fiber.Ctx) error {
 
-	userId := ctx.Locals("LoggedUserId").(string)
+	userId := ctx.Locals("CurrentUserId").(string)
 
-	toDoIds, err := persistence.GetAllSet(store.ToDosByUserId+userId)
+	toDoIds, err := persistence.GetAllSet(store.ToDosByUserId + userId)
 	allToDoMap, err := persistence.GetAllHash(store.ToDos)
 
 	if err != nil {
@@ -66,10 +65,13 @@ func GetToDoByUser(ctx *fiber.Ctx) error {
 	return ctx.JSON(userToDoList)
 }
 
-
 func CreateToDo(ctx *fiber.Ctx) error {
 
-	userId := ctx.Locals("LoggedUserId").(string)
+	userId := ctx.Locals("CurrentUserId").(string)
+
+	if (len(userId) == 0) {
+		ctx.Status(400).JSON(fiber.Map{"message": "Unknown user Id."})
+	}
 
 	newToDo := new(models.ToDoItem)
 	if err := ctx.BodyParser(newToDo); err != nil {
