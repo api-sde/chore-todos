@@ -1,13 +1,10 @@
-Update docker-compose.yml
-2728bf7
-Update compose for local
 version: "3.9"
 services:
   api:
-    image: golang:latest
+    image: adrienbdx/go-fiber:latest
     volumes:
       - .:/go-fiber
-    working_dir: /go-fiber
+    working_dir: /api
     build: ./
     command: go run main.go
     ports:
@@ -19,4 +16,4 @@ services:
   redis:
     image: redis:alpine
     ports:
-      #- 127:0:0:1:6379:6379 
+      - 127:0:0:1:6379:6379 

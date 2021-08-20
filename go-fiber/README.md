@@ -2,7 +2,24 @@ Go Implementation using Fiber (https://github.com/gofiber/fiber)
 
 go version go1.15.6 darwin/amd64
 
+To start the app:
 go run main.go
+
+To run Redis locally in a container, run command:
+docker run --name go-fiber-standalone -p 6379:6379 -d redis redis-server --appendonly yes
+
+and then update repository.go with:
+Addr:     "localhost:6379",
+
+Containers:
+- In root project folder, docker-compose and Dockerfile (go app) are built.
+1 - Build the API image: 
+docker build -t adrienbdx/go-fiber:latest .
+
+2 - Run docker-compose up, check if the app is running and exposed at:
+http://127.0.0.1:3333/hello
+
+3 - docker-compose down
 
 - Implemented: 
     * Simple REST API CRUD logic and validation
